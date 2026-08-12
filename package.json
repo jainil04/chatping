@@ -1,0 +1,72 @@
+{
+  "name": "chatping",
+  "displayName": "ChatPing",
+  "description": "Get a sound and/or OS notification when your AI chat (Copilot, Claude, ChatGPT) needs your input.",
+  "version": "0.0.1",
+  "publisher": "ai-chat-helper",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "ChatPing",
+      "properties": {
+        "chatping.playSound": {
+          "type": "boolean",
+          "default": true,
+          "description": "Play a sound when an AI chat needs your attention."
+        },
+        "chatping.sendOsNotification": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send an OS-level notification when an AI chat needs your attention."
+        },
+        "chatping.pollIntervalSeconds": {
+          "type": "number",
+          "default": 5,
+          "description": "How often (in seconds) ChatPing checks chat state."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "chatping.toggleSound",
+        "title": "ChatPing: Toggle Sound Alerts"
+      },
+      {
+        "command": "chatping.toggleNotification",
+        "title": "ChatPing: Toggle OS Notifications"
+      },
+      {
+        "command": "chatping.testAlert",
+        "title": "ChatPing: Send Test Alert"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/node-notifier": "^8.0.5",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "node-notifier": "^10.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "MIT"
+}
