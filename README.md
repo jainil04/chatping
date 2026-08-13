@@ -32,46 +32,60 @@ focus.
 
 ## Status
 
-**There is no real Copilot Chat state detection, and there can't currently
-be one.** This was investigated directly (reading `@types/vscode`,
-inspecting the bundled `copilot-chat` extension in both stable and
-Insiders VS Code, and empirically testing terminal-execution events against
-a real Copilot Chat agent session):
+### What works today
 
-- `vscode.chat` only exposes `createChatParticipant()` — for building your
-  *own* `@participant`, not for observing another extension's chat activity.
-  There's no event for "a chat needs confirmation" or "a chat went idle."
-- The built-in Chat panel lives in the sidebar/panel by default, not the
-  editor tab area, so `vscode.window.tabGroups` doesn't even see it unless
-  the user manually pops it out to an editor tab — and even then, `Tab` has
-  no badge, description, or content-state field to read.
-- `vscode.window.onDidStartTerminalShellExecution` /
-  `onDidEndTerminalShellExecution` were tested directly against Copilot's
-  agent-mode terminal tool. The confirmation UI Copilot shows lives entirely
-  inside its own chat webview, before it ever creates a
-  `TerminalShellExecution` — so these events structurally cannot fire during
-  an approval wait; `START` only exists once a command has already begun
-  running.
-- Copilot Chat itself uses several *proposed* VS Code APIs that look purpose
-  -built for this (`chatParticipantAdditions`, `chatStatusItem`,
-  `chatInputNotification`, `toolInvocationApproveCombination`, etc.), but
-  every one of them is allowlisted in VS Code's `product.json` to specific
-  extension IDs (`GitHub.copilot-chat` and a few Microsoft partners) — a
-  third-party extension can't use them, and the Marketplace refuses to
-  publish an extension that declares `enabledApiProposals` at all.
+- **`ChatPing: Send Test Alert`** (manual) — fires the configured
+  sound + OS notification on demand. This is the only way to see what an
+  alert looks like; nothing calls it automatically.
+- **Away Reminder** (opt-in, off by default) — fires once after VS Code has
+  been continuously unfocused for `chatping.awayReminder.afterMinutes`.
+  Explicitly **not chat-aware** — it only tracks window focus
+  (`vscode.window.state.focused`), not any chat's state, and its title/
+  message never claim otherwise.
+- Toggleable sound / OS notification flags, a status bar toggle, and debug
+  logging of state transitions to the "ChatPing" output channel.
 
-Given that, ChatPing currently ships two clearly separate, honestly-labeled
-features instead of pretending to detect chat state:
+### What was investigated and found not possible (Copilot Chat)
 
-1. **Manual test alert** — `ChatPing: Send Test Alert` fires the configured
-   sound/notification on demand. This is the only way to see what an alert
-   looks like; nothing calls it automatically.
-2. **Away reminder** (opt-in, off by default) — watches
-   `vscode.window.state.focused` only, and fires a reminder once VS Code has
-   been continuously unfocused for `chatping.awayReminder.afterMinutes`. It
-   has no knowledge of chat state at all — it's a "you wandered off" nudge,
-   not a "chat needs you" alert, and is deliberately never conflated with
-   one in its title, message, or settings.
+This was investigated directly — reading `@types/vscode`, inspecting the
+bundled `copilot-chat` extension in both stable and Insiders VS Code, and
+empirically testing terminal-execution and elicitation behavior against a
+real Copilot Chat agent session. Full technical trail is in `CLAUDE.md`.
+Summary:
+
+- No public VS Code API lets one extension observe another extension's chat
+  state — no event for "a chat needs confirmation" or "a chat went idle."
+- Confirmation/tool-approval APIs exist (`chatParticipantAdditions`,
+  `chatStatusItem`, `toolInvocationApproveCombination`, etc.) but are
+  allowlisted in VS Code's `product.json` specifically to
+  `GitHub.copilot-chat`'s extension ID — not usable by third parties, and
+  wouldn't be publishable to the Marketplace even if used.
+- MCP's elicitation feature (the structured question-card UI, with
+  numbered options and pagination) is implemented entirely inside VS
+  Code core's internal workbench layer (`IMcpElicitationService` and
+  friends) — it never crosses into the extension host, so there's no event
+  or type to hook into even in principle, not even a gated one.
+- A look at other Marketplace extensions claiming to solve this problem
+  found the same pattern every time: either a manual trigger command, or
+  the same focus/idle heuristic ChatPing already implements as "Away
+  Reminder." Nobody has actually cracked real event-based detection for
+  Copilot Chat.
+
+### What's real but different (Claude Code CLI)
+
+Claude Code (the CLI tool, separate from VS Code's Copilot Chat) has its
+own first-party hooks system — a `Notification` event with `idle_prompt`
+and `permission_prompt` types that fires on genuine state transitions. This
+is a real, documented, supported mechanism, unlike anything found for
+Copilot Chat. Not yet wired into ChatPing.
+
+### What's unexplored
+
+Third-party ChatGPT VS Code extensions that render their chat UI as a
+webview may be a fundamentally different — and more observable — case than
+Copilot's native panel, since a webview panel is a first-class citizen of
+`vscode.window.tabGroups` in a way Copilot's native panel isn't. Untested
+so far.
 
 ## Development
 
