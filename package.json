@@ -31,7 +31,22 @@
         "chatping.pollIntervalSeconds": {
           "type": "number",
           "default": 5,
-          "description": "How often (in seconds) ChatPing checks chat state."
+          "description": "How often (in seconds) ChatPing's away-reminder timer checks whether VS Code is still unfocused."
+        },
+        "chatping.awayReminder.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Fire a reminder alert after VS Code has been unfocused for a while. NOT chat-aware — it has no knowledge of Copilot Chat or any other chat's state, it only tracks window focus. Opt-in and off by default."
+        },
+        "chatping.awayReminder.afterMinutes": {
+          "type": "number",
+          "default": 5,
+          "description": "Minutes VS Code must be continuously unfocused before the away reminder fires (only used when chatping.awayReminder.enabled is true)."
+        },
+        "chatping.debugLogging": {
+          "type": "boolean",
+          "default": false,
+          "description": "Log detected state changes (focus transitions, away-reminder firings) to the ChatPing output channel."
         }
       }
     },
@@ -43,6 +58,10 @@
       {
         "command": "chatping.toggleNotification",
         "title": "ChatPing: Toggle OS Notifications"
+      },
+      {
+        "command": "chatping.toggleAwayReminder",
+        "title": "ChatPing: Toggle Away Reminder"
       },
       {
         "command": "chatping.testAlert",
